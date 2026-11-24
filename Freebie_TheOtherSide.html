@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Other Side</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+<style>
+/* VOICE: dry, procedural, a little cruel to the system, never to the player
+   IDEA: a cheap arcade crossing, then a formal letter on company paper
+   COLOUR and TYPE: newsprint white, hard black ink, one red (the player); Archivo condensed (the show's wordmark) */
+:root{color-scheme:light dark;
+  --bg:light-dark(#ecebe6,#101010);
+  --paper:light-dark(#ffffff,#1b1b1b);
+  --ink:light-dark(#111111,#ededea);
+  --dim:light-dark(#5d5d5a,#a3a39e);
+  --rule:light-dark(#111111,#5b5b58);
+  --hair:light-dark(#d6d5d0,#333331);
+  --red:#e3173e;
+}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Archivo",system-ui,sans-serif;overflow-x:clip}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+[hidden]{display:none!important}
+.band{padding:clamp(20px,3.5vw,48px) max(4vw,14px)}
+.wrap{max-width:980px;margin:0 auto}
+header.band{padding-bottom:0}
+.title{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 24px;border-bottom:3px solid var(--rule);padding-bottom:12px}
+h1{margin:0;font-stretch:62%;font-weight:900;font-size:clamp(40px,7vw,76px);line-height:.92;letter-spacing:-.01em;text-transform:uppercase}
+.sub{margin:0;color:var(--dim);font-size:15px;max-width:40ch}
+.sub b{color:var(--ink)}
+h2{margin:0 0 12px;font-stretch:70%;font-weight:900;font-size:clamp(28px,4vw,40px);line-height:1;text-transform:uppercase}
+.btn{min-height:44px;padding:0 18px;border:2px solid var(--rule);background:var(--paper);font-weight:700;border-radius:4px}
+.btn.primary{background:var(--red);border-color:var(--red);color:#fff}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px;align-items:center}
+.note{font-size:14px;color:var(--dim);margin:8px 0 0}
+
+/* Johanna */
+.jo{border-left:4px solid var(--red);padding:6px 0 6px 14px;margin:0 0 20px;font-size:17px;font-style:italic;max-width:60ch}
+.jo b{font-style:normal;font-stretch:70%;font-weight:900;letter-spacing:.06em;display:block;font-size:13px;color:var(--red)}
+
+/* setup */
+.panel{background:var(--paper);border:3px solid var(--rule);padding:clamp(16px,3vw,28px);box-shadow:8px 8px 0 var(--rule)}
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 24px}
+@media(max-width:700px){.fields{grid-template-columns:minmax(0,1fr)}}
+.fields label{display:block;font-weight:700;font-stretch:85%;line-height:1.25}
+.fields label span{display:block;font-weight:400;color:var(--dim);font-size:14px}
+.fields input{display:block;width:100%;margin-top:6px;min-height:44px;font-size:16px;padding:0 12px;border:2px solid var(--hair);background:var(--bg);border-radius:4px}
+.fields .sep{grid-column:1/-1;border-top:2px solid var(--rule);padding-top:12px;margin-top:4px;font-stretch:70%;font-weight:900;text-transform:uppercase;font-size:20px}
+
+/* game */
+.game{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:24px;align-items:start}
+@media(max-width:820px){.game{grid-template-columns:minmax(0,1fr)}}
+.stage{position:relative;width:fit-content;max-width:100%;border:3px solid var(--rule);background:var(--paper);box-shadow:8px 8px 0 var(--rule);touch-action:none;user-select:none;-webkit-user-select:none}
+canvas{display:block;width:100%;height:auto}
+.toast{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%) scale(.9);background:var(--ink);color:var(--paper);padding:10px 16px;font-weight:800;font-stretch:80%;font-size:clamp(16px,2.6vw,22px);max-width:88%;text-align:center;opacity:0;transition:opacity .15s,transform .15s;pointer-events:none;line-height:1.2}
+.toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.toast.red{background:var(--red);color:#fff}
+.hud{display:grid;gap:16px}
+.hud .box{background:var(--paper);border:2px solid var(--rule);padding:14px}
+.hud h3{margin:0 0 6px;font-size:14px;font-stretch:75%;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--dim)}
+.time{font-stretch:62%;font-weight:900;font-size:64px;line-height:1;font-variant-numeric:tabular-nums}
+.time.low{color:var(--red)}
+.carry{list-style:none;margin:0;padding:0}
+.carry li{padding:6px 0;border-bottom:1px solid var(--hair);font-weight:600;font-stretch:85%;line-height:1.2}
+.carry li.gone{color:var(--dim);text-decoration:line-through;text-decoration-color:var(--red);text-decoration-thickness:2px}
+.pad{display:grid;grid-template-columns:repeat(3,64px);grid-template-rows:repeat(2,56px);gap:6px;justify-content:center;margin-top:16px}
+.pad button{border:2px solid var(--rule);background:var(--paper);font-size:22px;font-weight:900;border-radius:6px}
+.pad .u{grid-column:2;grid-row:1}.pad .l{grid-column:1;grid-row:2}.pad .d{grid-column:2;grid-row:2}.pad .r{grid-column:3;grid-row:2}
+@media(hover:hover) and (pointer:fine){.pad{display:none}}
+.keys{font-size:14px;color:var(--dim)}
+
+/* letter */
+.letter{background:#fff;color:#111;max-width:680px;padding:clamp(24px,5vw,56px);border:1px solid var(--hair);box-shadow:8px 8px 0 var(--rule);font-size:17px;line-height:1.6}
+.letter .meta{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 16px;font-size:14px;color:#555;border-bottom:2px solid #111;padding-bottom:10px;margin-bottom:22px}
+.letter .re{font-weight:800;font-stretch:80%;text-transform:uppercase;letter-spacing:.04em;margin:0 0 18px}
+.letter [contenteditable]{outline:none;border-radius:2px}
+.letter [contenteditable]:hover{background:#f6f5f1}
+.letter [contenteditable]:focus{background:#f6f5f1;box-shadow:0 0 0 2px var(--red)}
+.letter ol{margin:8px 0 18px;padding-left:1.4em}
+.letter li{padding:2px 0}
+.letter .sig{margin-top:28px}
+.letter .sig b{display:block;font-size:22px;font-stretch:75%}
+
+/* withdraw */
+.miss{list-style:none;margin:0;padding:0;border-top:3px solid var(--rule)}
+.miss li{font-stretch:70%;font-weight:900;font-size:clamp(24px,4vw,38px);line-height:1.1;padding:12px 0;border-bottom:2px solid var(--rule)}
+
+footer{font-size:13px;color:var(--dim);border-top:3px solid var(--rule)}
+@media print{
+  @page{size:A4;margin:20mm}
+  body{background:#fff}
+  body *{visibility:hidden}
+  .letter,.letter *{visibility:visible}
+  .letter{position:absolute;left:0;top:0;box-shadow:none;border:0;padding:0;max-width:none}
+  .letter [contenteditable]:hover{background:none}
+}
+</style>
+</head>
+<body>
+<header class="band"><div class="wrap title">
+  <h1>The Other Side</h1>
+  <p class="sub">A <b>Nobody's Business</b> freebie for episode 10, <b>Nobody Asks: Why Do You Stay?</b> One road, thirty seconds.</p>
+</div></header>
+
+<!-- 1. SETUP -->
+<main class="band" id="s-setup"><div class="wrap">
+  <p class="jo"><b>JOHANNA</b>Before you start, I need a few details. Standard procedure.</p>
+  <form class="panel" id="setup" autocomplete="off">
+    <h2>Player setup</h2>
+    <div class="fields">
+      <label>Your name<input id="f-name" maxlength="40" placeholder="The undersigned"></label>
+      <label>What do you make?<span>music, film, dance, words…</span><input id="f-disc" maxlength="40" placeholder="music"></label>
+      <div class="sep">Pack your bag: five things</div>
+      <label>Starting item<span>The object in your workspace you'd save from a fire</span><input class="it" maxlength="70" placeholder="the pencil with the chewed end"></label>
+      <label>Power-up hour<span>When does the clock disappear for you?</span><input class="it" maxlength="70" placeholder="late afternoon, headphones on"></label>
+      <label>Witness<span>Who was there the last time it felt worth it?</span><input class="it" maxlength="70" placeholder="the cellist who stayed after the concert"></label>
+      <label>Secret level<span>A moment in your work that nobody else saw</span><input class="it" maxlength="70" placeholder="the night the second movement finally worked"></label>
+      <label>Soundtrack<span>What does your work sound like when it's going well?</span><input class="it" maxlength="70" placeholder="pencil on paper, very fast"></label>
+    </div>
+    <div class="row">
+      <button class="btn primary" type="submit">Start</button>
+      <span class="note">Blank fields use the grey examples. Nothing leaves this page.</span>
+    </div>
+  </form>
+</div></main>
+
+<!-- 2. GAME -->
+<main class="band" id="s-game" hidden><div class="wrap game">
+  <div>
+    <div class="stage" id="stage">
+      <canvas id="cv" aria-label="Crossing game. Use arrow keys to move."></canvas>
+      <div class="toast" id="toast" role="status" aria-live="assertive"></div>
+    </div>
+    <div class="pad" aria-label="Controls">
+      <button class="u" data-m="0,-1" aria-label="Up">▲</button>
+      <button class="l" data-m="-1,0" aria-label="Left">◀</button>
+      <button class="d" data-m="0,1" aria-label="Down">▼</button>
+      <button class="r" data-m="1,0" aria-label="Right">▶</button>
+    </div>
+  </div>
+  <aside class="hud">
+    <div class="box"><h3>Time</h3><div class="time" id="time">30</div></div>
+    <div class="box"><h3>You are carrying</h3><ul class="carry" id="carry"></ul></div>
+    <p class="keys">Arrow keys or WASD. On a phone, swipe or use the buttons. Get to the other side.</p>
+  </aside>
+</div></main>
+
+<!-- 3. LETTER -->
+<main class="band" id="s-letter" hidden><div class="wrap">
+  <p class="jo"><b>JOHANNA</b><span id="jo-end">Resignation is the usual form. I have drafted it for you.</span></p>
+  <article class="letter" id="letter">
+    <div class="meta"><span id="l-date"></span><span>To: Art</span></div>
+    <p class="re">Re: Resignation</p>
+    <div contenteditable="true" spellcheck="false" id="l-body"></div>
+    <div class="sig">Yours sincerely,<b contenteditable="true" spellcheck="false" id="l-name"></b></div>
+  </article>
+  <p class="note">The letter is editable. Click any line to change it.</p>
+  <div class="row">
+    <button class="btn" id="print">Print letter</button>
+    <button class="btn" id="copy">Copy letter</button>
+    <button class="btn primary" id="withdraw">Withdraw resignation</button>
+  </div>
+  <p class="note" id="msg" aria-live="polite"></p>
+</div></main>
+
+<!-- 4. WITHDRAW -->
+<main class="band" id="s-withdraw" hidden><div class="wrap">
+  <p class="jo"><b>JOHANNA</b>Resignation withdrawn. One question for the file.</p>
+  <h2>If you had to stop tomorrow — what would you miss?</h2>
+  <ul class="miss" id="miss"></ul>
+  <p class="jo" style="margin-top:28px"><b>JOHANNA</b>I don't resign. I am simply stopped. I don't ask why. Do you need to?</p>
+  <div class="row">
+    <button class="btn primary" id="again">Cross again</button>
+    <button class="btn" id="restart">New player</button>
+  </div>
+</div></main>
+
+<footer class="band"><div class="wrap">Nobody's Business — a podcast about the hidden economics of artistic life.</div></footer>
+
+<script>
+{
+const $=id=>document.getElementById(id);
+const COLS=11,ROWS=13,START=12,MID=6,TIME=30;
+const LANES=[
+ {row:1, dir:-1,speed:3.0,gap:3,words:["AI-generated piece selected","We went with a more established name"]},
+ {row:2, dir:1, speed:2.0,gap:4,words:["You have great potential, but…"]},
+ {row:3, dir:-1,speed:2.6,gap:3,words:["Fee: to be discussed","Budget cut"]},
+ {row:4, dir:1, speed:3.4,gap:3,words:["Rent due","Rent due","Rent due"]},
+ {row:5, dir:-1,speed:1.7,gap:4,words:["Due to the high number of applications"]},
+ {row:7, dir:1, speed:2.3,gap:3,words:["Can you do it for exposure?"]},
+ {row:8, dir:-1,speed:3.0,gap:3,words:["Payment within 90 days","Unpaid rehearsal"]},
+ {row:9, dir:1, speed:1.9,gap:4,words:["Could you also teach on Fridays?"]},
+ {row:10,dir:-1,speed:2.7,gap:3,words:["Not quite what we're looking for","Too niche"]},
+ {row:11,dir:1, speed:1.6,gap:3,words:["AI-generated piece selected","Great, but there's no budget"]}
+];
+const cv=$("cv"),ctx=cv.getContext("2d");
+let cell=50,P={},G=null,raf=0;
+
+function colors(){
+  const probe=document.createElement("i");document.body.appendChild(probe);
+  const get=v=>{probe.style.color=`var(${v})`;return getComputedStyle(probe).color};
+  const c={paper:get("--paper"),ink:get("--ink"),dim:get("--dim"),hair:get("--hair"),red:"#e3173e"};
+  probe.remove();return c;
+}
+let C=colors();
+matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{C=colors()});
+const font=px=>`600 ${px}px Archivo, system-ui, sans-serif`;
+function setStretch(){try{ctx.fontStretch="condensed"}catch(e){}}
+
+function buildLanes(){
+  setStretch();ctx.font=font(0.34*50);
+  for(const L of LANES){
+    const segs=[];let x=0,i=0;
+    while(x<COLS*1.8||i<L.words.length){
+      const t=L.words[i%L.words.length];
+      const len=Math.ceil(ctx.measureText(t).width/50+0.7);
+      segs.push({x,len,t});x+=len+L.gap;i++;
+    }
+    L.segs=segs;L.cycle=x;
+  }
+}
+
+function resize(){
+  const w=Math.min($("stage").parentElement.clientWidth-6,720);
+  cell=Math.max(26,Math.floor(Math.min(w/COLS,(innerHeight-120)/ROWS)));
+  const dpr=window.devicePixelRatio||1;
+  cv.width=COLS*cell*dpr;cv.height=ROWS*cell*dpr;
+  cv.style.width=COLS*cell+"px";cv.style.height=ROWS*cell+"px";
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  if(G)draw();
+}
+addEventListener("resize",resize);
+
+function show(id){for(const s of["s-setup","s-game","s-letter","s-withdraw"])$(s).hidden=s!==id;scrollTo({top:0,behavior:"instant"})}
+
+/* ---------- setup ---------- */
+$("setup").addEventListener("submit",e=>{
+  e.preventDefault();
+  const v=el=>el.value.trim()||el.placeholder;
+  P={name:v($("f-name")),disc:v($("f-disc")),items:[...document.querySelectorAll(".it")].map(v)};
+  start();
+});
+
+/* ---------- game ---------- */
+function start(){
+  show("s-game");C=colors();resize();
+  G={fx:5,fy:START,shift:LANES.map(()=>0),t:0,lost:0,cross:0,inv:0,cd:1.6,running:true,paused:false,last:0};
+  renderCarry();$("time").textContent=TIME;$("time").classList.remove("low");
+  cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);
+}
+function renderCarry(){
+  $("carry").innerHTML="";
+  P.items.forEach((it,i)=>{const li=document.createElement("li");li.textContent=it;if(i<G.lost)li.className="gone";$("carry").appendChild(li)});
+}
+let toastT;
+function toast(text,red){const t=$("toast");t.textContent=text;t.className="toast show"+(red?" red":"");clearTimeout(toastT);toastT=setTimeout(()=>t.className="toast",1300)}
+
+function move(dx,dy){
+  if(!G||!G.running||G.cd>0)return;
+  G.fx=Math.max(0,Math.min(COLS-1,G.fx+dx));
+  G.fy=Math.max(0,Math.min(START,G.fy+dy));
+  if(G.fy===0){
+    G.cross++;toast("You crossed. It is the same road on this side.",true);
+    G.fx=5;G.fy=START;G.inv=1;
+  }
+}
+function hit(){
+  const item=P.items[G.lost];G.lost++;renderCarry();
+  toast("Gone: "+item);
+  if(G.lost>=P.items.length){end("lives");return}
+  G.fx=5;G.fy=START;G.inv=1;
+}
+function end(why){
+  G.running=false;
+  if(why==="time"){G.lost=P.items.length;renderCarry();toast("Time's up. The season is over.",true)}
+  setTimeout(letter,1500);
+}
+function laneAt(row){return LANES.findIndex(L=>L.row===row)}
+function loop(ts){
+  if(!G)return;
+  const dt=G.last?Math.min(.05,(ts-G.last)/1000):0;G.last=ts;
+  if(G.running&&!G.paused){
+    if(G.cd>0)G.cd-=dt;
+    else{
+      G.t+=dt;
+      const mult=1+G.t/22+G.cross*.35;
+      LANES.forEach((L,i)=>G.shift[i]+=L.speed*mult*dt);
+      if(G.inv>0)G.inv-=dt;
+      const left=Math.max(0,TIME-G.t);
+      $("time").textContent=Math.ceil(left);$("time").classList.toggle("low",left<=10);
+      const li=laneAt(G.fy);
+      if(li>=0&&G.inv<=0){
+        const L=LANES[li],a=G.fx+.18,b=G.fx+.82;
+        for(const s of L.segs){
+          const x=((s.x+L.dir*G.shift[li])%L.cycle+L.cycle)%L.cycle;
+          if((a<x+s.len&&b>x)||(a<x-L.cycle+s.len&&b>x-L.cycle)){hit();break}
+        }
+      }
+      if(G.running&&left<=0)end("time");
+    }
+  }
+  draw();
+  raf=requestAnimationFrame(loop);
+}
+document.addEventListener("visibilitychange",()=>{if(G){G.paused=document.hidden;G.last=0}});
+
+function draw(){
+  const W=COLS*cell,H=ROWS*cell;setStretch();
+  ctx.fillStyle=C.paper;ctx.fillRect(0,0,W,H);
+  // goal, median, start
+  ctx.fillStyle=C.ink;ctx.fillRect(0,0,W,cell);
+  ctx.fillStyle=C.paper;ctx.font=`900 ${cell*.42}px Archivo, sans-serif`;ctx.textAlign="center";ctx.textBaseline="middle";
+  ctx.fillText("THE OTHER SIDE",W/2,cell/2);
+  ctx.fillStyle=C.hair;ctx.fillRect(0,MID*cell,W,cell);ctx.fillRect(0,START*cell,W,cell);
+  ctx.fillStyle=C.dim;ctx.font=font(cell*.32);
+  ctx.fillText("a short residency",W/2,MID*cell+cell/2);
+  ctx.fillText("start",W/2,START*cell+cell/2);
+  // lane lines
+  ctx.strokeStyle=C.hair;ctx.lineWidth=1;ctx.setLineDash([cell*.25,cell*.25]);
+  for(const L of LANES){ctx.beginPath();ctx.moveTo(0,L.row*cell+.5);ctx.lineTo(W,L.row*cell+.5);ctx.stroke()}
+  ctx.setLineDash([]);
+  // obstacles
+  ctx.font=font(cell*.34);
+  LANES.forEach((L,i)=>{
+    for(const s of L.segs){
+      const base=((s.x+L.dir*G.shift[i])%L.cycle+L.cycle)%L.cycle;
+      for(const x of[base,base-L.cycle]){
+        if(x>COLS||x+s.len<0)continue;
+        const px=x*cell,py=L.row*cell+cell*.14,w=s.len*cell,h=cell*.72;
+        ctx.fillStyle=C.ink;ctx.fillRect(px,py,w,h);
+        ctx.fillStyle=C.paper;ctx.fillText(s.t,px+w/2,py+h/2+1);
+      }
+    }
+  });
+  // frog
+  if(G.running&&!(G.inv>0&&Math.floor(G.inv*10)%2)){
+    const x=G.fx*cell,y=G.fy*cell,m=cell*.14,s=cell-2*m;
+    ctx.fillStyle=C.red;ctx.beginPath();ctx.roundRect?ctx.roundRect(x+m,y+m,s,s,cell*.18):ctx.rect(x+m,y+m,s,s);ctx.fill();
+    ctx.fillStyle="#fff";
+    for(const ex of[.36,.64]){ctx.beginPath();ctx.arc(x+cell*ex,y+cell*.38,cell*.09,0,7);ctx.fill()}
+    ctx.fillStyle="#111";
+    for(const ex of[.36,.64]){ctx.beginPath();ctx.arc(x+cell*ex,y+cell*.36,cell*.04,0,7);ctx.fill()}
+  }
+  // countdown
+  if(G.cd>0){
+    ctx.fillStyle="rgba(0,0,0,.55)";ctx.fillRect(0,0,W,H);
+    ctx.fillStyle="#fff";ctx.font=`900 ${cell*2.2}px Archivo, sans-serif`;
+    ctx.fillText(G.cd>1.05?"READY":"GO",W/2,H/2);
+  }
+}
+
+addEventListener("keydown",e=>{
+  if($("s-game").hidden)return;
+  const k={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],w:[0,-1],s:[0,1],a:[-1,0],d:[1,0],W:[0,-1],S:[0,1],A:[-1,0],D:[1,0]}[e.key];
+  if(k){e.preventDefault();move(...k)}
+});
+document.querySelectorAll(".pad button").forEach(b=>b.addEventListener("pointerdown",e=>{e.preventDefault();move(...b.dataset.m.split(",").map(Number))}));
+let sx=0,sy=0;
+$("stage").addEventListener("pointerdown",e=>{sx=e.clientX;sy=e.clientY});
+$("stage").addEventListener("pointerup",e=>{
+  const dx=e.clientX-sx,dy=e.clientY-sy;
+  if(Math.max(Math.abs(dx),Math.abs(dy))<18){move(0,-1);return}
+  Math.abs(dx)>Math.abs(dy)?move(Math.sign(dx),0):move(0,Math.sign(dy));
+});
+
+/* ---------- letter ---------- */
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function letter(){
+  cancelAnimationFrame(raf);
+  $("jo-end").textContent=G.cross>0
+    ?`You crossed ${G.cross===1?"once":G.cross+" times"}. The road was still there. I have drafted the usual form.`
+    :"Resignation is the usual form. I have drafted it for you.";
+  $("l-date").textContent=new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"});
+  $("l-body").innerHTML=
+   `<p>Dear Art,</p>
+    <p>I hereby resign from my position in ${esc(P.disc)}, with immediate effect.</p>
+    <p>In accordance with my contract, I return the following:</p>
+    <ol>${P.items.map(i=>`<li>${esc(i)}</li>`).join("")}</ol>
+    <p>I will not be requesting a reference.</p>`;
+  $("l-name").textContent=P.name;
+  $("msg").textContent="";
+  show("s-letter");
+}
+$("print").addEventListener("click",()=>{try{print()}catch(e){$("msg").textContent="Printing is blocked here. Open the page in your browser and press Cmd or Ctrl + P."}});
+$("copy").addEventListener("click",async()=>{
+  const text=$("l-date").textContent+"\nTo: Art\nRe: Resignation\n\n"+$("l-body").innerText.trim()+"\n\nYours sincerely,\n"+$("l-name").innerText.trim();
+  try{await navigator.clipboard.writeText(text);$("msg").textContent="Letter copied."}
+  catch(e){$("msg").textContent="Copy was blocked here. Select the letter and copy it by hand."}
+});
+$("withdraw").addEventListener("click",()=>{
+  $("miss").innerHTML="";
+  $("l-body").querySelectorAll("li").forEach(li=>{const m=document.createElement("li");m.textContent=li.innerText;$("miss").appendChild(m)});
+  show("s-withdraw");
+});
+$("again").addEventListener("click",start);
+$("restart").addEventListener("click",()=>{show("s-setup")});
+
+(document.fonts?document.fonts.ready:Promise.resolve()).then(buildLanes,buildLanes);
+buildLanes();
+}
+</script>
+</body>
+</html>
